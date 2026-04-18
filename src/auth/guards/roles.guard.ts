@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Role } from '@prisma/client';
-import { RequestWithUser } from '../decorators/current-user.decorator'; // The strict type you created!
+import type { RequestWithUser } from '../decorators/current-user.decorator'; // The strict type you created!
 
 @Injectable()
 export class RolesGuard implements CanActivate {
