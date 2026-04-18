@@ -25,7 +25,7 @@ export class CreateProductDto {
   @Min(0)
   stock!: number;
 
-  @ApiProperty({ enum: Category, description: 'Category of the product' })
+  @ApiProperty({ enum: Category, enumName: 'Category' })
   @IsEnum(Category)
   category!: Category;
 }
