@@ -6,9 +6,9 @@ import { PrismaService } from 'src/prisma/prisma.service';
 @Injectable()
 export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
-  create(createProductDto: CreateProductDto) {
+  async create(createProductDto: CreateProductDto) {
     try {
-      const product = this.prisma.product.create({
+      const product = await this.prisma.product.create({
         data: {
           name: createProductDto.name,
           description: createProductDto.description,
@@ -24,12 +24,34 @@ export class ProductsService {
     }
   }
 
-  findAll() {
-    return `This action returns all products`;
+  async findAll(page?: number, limit?: number) {
+    const safePage = Number(page) || 1;
+    const safeLimit = Number(limit) || 10;
+    try {
+      const products = await this.prisma.product.findMany({
+        skip: (safePage - 1) * safeLimit, // offset
+        take: safeLimit, // limit
+        orderBy: {
+          createdAt: 'desc', // optional: newest first
+        },
+      });
+
+      return products;
+    } catch (err) {
+      console.error(`On products service findAll: ${err}`);
+      return null;
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} product`;
+  async findOne(id: string) {
+    try {
+      return await this.prisma.product.findUnique({
+        where: { id },
+      });
+    } catch (err) {
+      console.error(`On products service findOne: ${err}`);
+      return null;
+    }
   }
 
   update(id: number, updateProductDto: UpdateProductDto) {

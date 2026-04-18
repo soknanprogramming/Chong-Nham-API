@@ -8,6 +8,10 @@ import {
   Delete,
   UseGuards,
   InternalServerErrorException,
+  Query,
+  ParseIntPipe,
+  ParseUUIDPipe,
+  NotFoundException,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -17,11 +21,14 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { ProductResponseDto } from './dto/product-response.dto';
+import { ProductMapper } from './product.mapper';
+import { ErrorResponseDto } from 'src/dto/error-response.dto';
 
 @ApiTags('Products') // Group all these endpoints under "Products" in Swagger
 @Controller('products')
@@ -33,30 +40,54 @@ export class ProductsController {
   @Post()
   @ApiBearerAuth('JWT-auth') // Tells Swagger this route requires the padlock token
   @ApiOperation({ summary: 'Create a new product (Admin only)' }) // Add a summary for this endpoint in Swagger
-  @ApiResponse({
-    status: 201,
-    description: 'Product created successfully.',
-    type: ProductResponseDto,
-  })
-  @ApiResponse({ status: 403, description: 'Forbidden. Admins only.' })
-  @ApiResponse({ status: 500, description: 'Internal server error.' })
-  create(@Body() createProductDto: CreateProductDto) {
-    const product = this.productsService.create(createProductDto);
+  @ApiResponse({ status: 201, type: ProductResponseDto })
+  @ApiResponse({ status: 403, type: ErrorResponseDto })
+  @ApiResponse({ status: 500, type: ErrorResponseDto })
+  async create(
+    @Body() createProductDto: CreateProductDto,
+  ): Promise<ProductResponseDto> {
+    const product = await this.productsService.create(createProductDto);
     if (!product) {
       throw new InternalServerErrorException('Failed to create product');
     }
-    return product;
+    return ProductMapper.toDto(product);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Get()
-  findAll() {
-    return this.productsService.findAll();
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get all products' }) // Add a summary for this endpoint in Swagger
+  @ApiResponse({ status: 200, type: [ProductResponseDto] })
+  @ApiResponse({ status: 401, type: ErrorResponseDto })
+  @ApiResponse({ status: 500, type: ErrorResponseDto })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  async findAll(
+    @Query('page', ParseIntPipe) page?: number,
+    @Query('limit', ParseIntPipe) limit?: number,
+  ): Promise<ProductResponseDto[]> {
+    const products = await this.productsService.findAll(page, limit);
+    if (!products) {
+      throw new InternalServerErrorException('Failed to find product');
+    }
+    return products.map((product) => ProductMapper.toDto(product));
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get product by id' })
+  @ApiResponse({ status: 201, type: ProductResponseDto })
+  @ApiResponse({ status: 403, type: ErrorResponseDto })
+  @ApiResponse({ status: 500, type: ErrorResponseDto })
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.productsService.findOne(+id);
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ProductResponseDto> {
+    const product = await this.productsService.findOne(id);
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+    return ProductMapper.toDto(product);
   }
 
   @Patch(':id')
