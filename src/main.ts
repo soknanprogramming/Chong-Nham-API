@@ -6,7 +6,9 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   // 1. Enable Global Validation (so our DTOs work)
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({ whitelist: true, transform: true }),
+  );
 
   // 2. Configure OpenAPI (Swagger)
   const config = new DocumentBuilder()
