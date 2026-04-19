@@ -21,6 +21,7 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiResponse,
   ApiTags,
@@ -79,6 +80,11 @@ export class ProductsController {
   @ApiResponse({ status: 201, type: ProductResponseDto })
   @ApiResponse({ status: 403, type: ErrorResponseDto })
   @ApiResponse({ status: 500, type: ErrorResponseDto })
+  @ApiParam({
+    name: 'id',
+    description: 'Product UUID',
+    format: 'uuid',
+  })
   @Get(':id')
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
@@ -94,6 +100,11 @@ export class ProductsController {
   @Roles('ADMIN')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Update product by id (Admin only)' })
+  @ApiParam({
+    name: 'id',
+    description: 'Product UUID',
+    format: 'uuid',
+  })
   @ApiResponse({ status: 201, type: UpdateProductDto })
   @ApiResponse({ status: 403, type: ErrorResponseDto })
   @ApiResponse({ status: 500, type: ErrorResponseDto })
@@ -109,8 +120,25 @@ export class ProductsController {
     return ProductMapper.toDto(product);
   }
 
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.productsService.remove(id);
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Delete product by id (Admin only)' })
+  @ApiParam({
+    name: 'id',
+    description: 'Product UUID',
+    format: 'uuid',
+  })
+  @ApiResponse({ status: 200, type: ProductResponseDto })
+  @ApiResponse({ status: 403, type: ErrorResponseDto })
+  @ApiResponse({ status: 404, type: ErrorResponseDto })
+  @ApiResponse({ status: 500, type: ErrorResponseDto })
+  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<ProductResponseDto> {
+    const product = await this.productsService.remove(id);
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+    return ProductMapper.toDto(product);
   }
 }
