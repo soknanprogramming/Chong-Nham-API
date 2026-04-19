@@ -90,13 +90,27 @@ export class ProductsController {
     return ProductMapper.toDto(product);
   }
 
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Update product by id (Admin only)' })
+  @ApiResponse({ status: 201, type: UpdateProductDto })
+  @ApiResponse({ status: 403, type: ErrorResponseDto })
+  @ApiResponse({ status: 500, type: ErrorResponseDto })
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productsService.update(+id, updateProductDto);
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateProductDto: UpdateProductDto,
+  ): Promise<ProductResponseDto> {
+    const product = await this.productsService.update(id, updateProductDto);
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+    return ProductMapper.toDto(product);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.productsService.remove(+id);
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.productsService.remove(id);
   }
 }

@@ -54,11 +54,36 @@ export class ProductsService {
     }
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: string, updateProductDto: UpdateProductDto) {
+    try {
+      const updatedProduct = await this.prisma.product.update({
+        where: { id },
+        data: {
+          name: updateProductDto.name,
+          description: updateProductDto.description,
+          price: updateProductDto.price,
+          stock: updateProductDto.stock,
+          category: updateProductDto.category,
+        },
+      });
+
+      return updatedProduct;
+    } catch (err) {
+      console.error(`On products service update: ${err}`);
+      return null;
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
+  async remove(id: string) {
+    try {
+      const deletedProduct = await this.prisma.product.delete({
+        where: { id },
+      });
+
+      return deletedProduct;
+    } catch (err) {
+      console.error(`On products service remove: ${err}`);
+      return null;
+    }
   }
 }
