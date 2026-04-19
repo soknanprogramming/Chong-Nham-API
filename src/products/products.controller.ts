@@ -134,7 +134,9 @@ export class ProductsController {
   @ApiResponse({ status: 403, type: ErrorResponseDto })
   @ApiResponse({ status: 404, type: ErrorResponseDto })
   @ApiResponse({ status: 500, type: ErrorResponseDto })
-  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<ProductResponseDto> {
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ProductResponseDto> {
     const product = await this.productsService.remove(id);
     if (!product) {
       throw new NotFoundException('Product not found');

@@ -7,7 +7,9 @@ export class OrderItemResponseDto {
   @ApiProperty()
   productId!: string;
 
-  @ApiProperty({ description: 'Product name at time of response (from catalog)' })
+  @ApiProperty({
+    description: 'Product name at time of response (from catalog)',
+  })
   productName!: string;
 
   @ApiProperty()
